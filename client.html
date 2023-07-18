@@ -1,0 +1,119 @@
+<style>
+.v-locale--is-ltr .v-slider.v-input--horizontal .v-slider-thumb {
+    display: none;
+  }
+  .v-card {
+    background-color: #f3f3f3;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px !important;
+    border-radius: 3px;
+  }
+
+  .v-list-item-title {
+    display: flex;
+    justify-content: space-between;
+  }
+  .in-progress {
+    background-color: #e4dd8f;
+    border-radius: 20px;
+  }
+  .done {
+    background-color: #bddcbd;
+    border-radius: 20px;
+  }
+  .untouched {
+    background-color: #53535376;
+    border-radius: 20px;
+  }
+</style>
+
+<div id="app" class="p-12"></div>
+<script>
+  const { createApp, ref } = Vue;
+  const { createVuetify } = Vuetify;
+
+  const vuetify = createVuetify();
+
+  const app = createApp({
+    template: `
+    <v-app class="restaurant-app">
+    <div>
+    <v-card v-for="order in currOrders" class="mx-auto my-4" width="800">
+  <v-progress-linear
+        :model-value="order.items.filter(t=>t.status != 0).length/order.itemsCount*100"
+        bg-color="green"
+        color="green"
+      ></v-progress-linear>
+      <v-list-item-title class="py-4 px-2 d-flex  justify-content-between" >
+        <div class="d-flex flex-column align-items-start">
+         <div  class=" fs-18 font-weight-semibold">Order No. 
+          <span v-html="order.order_no"></span>
+          </div>
+         <div class="fs-11 font-weight-semibold">
+          <span v-html="order.itemsCount"></span>
+          &nbsp; Items 
+          </div>
+          </div>
+          <div>
+          <div class="text-center fs-14 px-2 py-1" :class="order.items.filter(t=>t.status != 0).length/order.itemsCount*100 == 0 ? 'untouched' : order.items.filter(t=>t.status != 0).length/order.itemsCount*100 == 100 ? 'done' : 'in-progress'" 
+            v-html="order.items.filter(t=>t.status != 0).length/order.itemsCount*100 == 0 ? 'Untouched' : order.items.filter(t=>t.status != 0).length/order.itemsCount*100 == 100 ? 'Done' : 'In-Progress'"></div>
+          <div class="text-center fs-14 px-2 py-1"  v-html="(order.items.filter(t=>t.status != 0).length/order.itemsCount*100).toFixed(2)+'%'"></div>
+          </div>
+            </v-list-item-title>   
+    </v-card>
+    </div>
+  </v-app>
+        `,
+    data: () => ({
+        currOrders: new Map(),
+        statusObj: {
+          "0": "Untouched",
+          "2": "In-Progress",
+          "1": "Done",
+        }
+    }),
+    computed: {
+      progressBar: function (order) {
+        console.log(order.items.filter(t=>t.status != 0).length/order.itemsCount*100)
+      return order.items.filter(t=>t.status != 0).length/order.itemsCount*100
+    }
+    },
+    methods: {
+          AggregateStockIndex: function(index, obj) {
+            const { item_name, order_no, invoice_id } = obj
+          const groupedMerger = (index[order_no] ??= { order_no, invoice_id, items: [], itemsCount: 0 });
+          groupedMerger.items.push(obj);
+          ++groupedMerger.itemsCount;
+
+          return index;
+        },
+        FetchAllCurrOrders: function(){
+            $.ajax({
+                url: "/v2/api/entity/le_order-items/list?per_page=1000",
+                method:"GET",
+                headers: {apikey: "7c677625232b637a1065355630d780923bfbce76"},
+            }).done(data=>{
+                console.log(data)
+                const slicedData = data.data
+                console.log(slicedData)
+                const stockIndex = slicedData.reduce(this.AggregateStockIndex, {})
+                const shareholderList = Object.values(slicedData.reduce(this.AggregateStockIndex, {})).sort((a, b) => b.itemsCount - a.itemsCount);
+                this.currOrders = stockIndex
+                console.log(
+                  this.currOrders
+                );
+            })
+            
+
+        }
+    },
+    beforeMount: function() {
+      setInterval(()=>{
+console.log("update"
+)
+        this.FetchAllCurrOrders()
+      },5000)
+    }
+  });
+
+  app.use(vuetify).mount("#app");
+</script>
