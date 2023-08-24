@@ -7,12 +7,41 @@ $(".orders-tabs-wrapper ul").append(
       "/owner/invoices/validate_pos_invoice_details/1?new=1"
     );
 
+const customStyles = `
+.extra-chip {
+    display: inline-block;
+    padding: 0 8px;
+    height: 23px;
+    font-size: 10px;
+    line-height: 23px;
+    border-radius: 40px;
+    background-color: #2551da;
+    color: #fff;
+    cursor: pointer;
+}
+
+
+.extra-chip-close-btn {
+    padding-left: 5px;
+    color: #fff;
+    /* font-weight: bold; */
+    float: right;
+    font-size: 15px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.extra-chip-close-btn:hover{
+  color: #b2b6c2;
+}
+`
+
 $("<style>li[data-cat='extra']{display:none !important}.toggle-input{display:block !important}</style>").appendTo( "head" )
+$(`<style>${customStyles}</style>`).appendTo( "head" )
 setTimeout(()=>{
 $("#pos-wrapper > div.pos-content > app-invoice > div > div.products-sheet > div > div > div > div > a.user-action.del-order.btn.btn-danger > i").trigger("click")
 const keyEvent = new Event( "keyup", { keyCode: 13 } );
 $('window').trigger(keyEvent);
-//console.log("*********", keyEvent)
 },2000)
 
 const extrasContainer = `<div class="extras-container" style="z-index:10;transition:.4s;position:absolute;top:50%;left:0;transform:translateX(-110%) translateY(-50%);border:4px solid #d5d5d5;box-shadow:2px 2px 20px 3px #7777773d;border-radius:6px;background:#fff;height:500px;width:300px"> <div style="width:100%;padding:0px;position:relative;z-index:20;"><span style="transform:rotate(45deg);position:absolute;top:0;right:0;padding:3px 10px;font-size:22px;cursor:pointer;" class="extras-close">+</span></div>
@@ -62,7 +91,7 @@ allProds.click((e)=>{
 
 e.stopPropagation()
 let currentCat = $("#pos-wrapper > div.pos-content > div > table > tbody > tr.table-top > td > div > app-breadcrumb > ol > li:nth-child(2) > a").text()
-//console.log(currentCat)
+
 const lastItem = $("#pos-wrapper > div.pos-content > app-invoice > div > div.products-sheet > div > div > div > app-invoice-items > ul > li.order-item:last-child")
 
 !lastItem.attr( "data-cat") && lastItem.attr( "data-cat", currentCat)
@@ -73,7 +102,7 @@ $(".extra-btn").off("toggle");
 $(".extra-btn").click(function () {
 const homeBtn = $("#pos-wrapper > div.pos-content > div > table > tbody > tr.table-top > td > div > app-breadcrumb > ol > li:nth-child(1)")
 homeBtn.click()
-//console.log(homeBtn)
+
 extraInterval = setInterval(()=>{
 const extraCard = $("#pos-wrapper > div.pos-content > div > table > tbody > tr.table-cont > td > app-categories > div").find("span.product[data-category= '14']")
 if(extraCard){
@@ -107,26 +136,27 @@ const allProds = $("#pos-wrapper > div.pos-content > div > table > tbody > tr.ta
 
 // When clicking on Extra Items
 allProds.click(function(){
+const selectedExtraPrice = $(this).find("app-product > div.Product-meta > span.price-tag").text()
 const selectedExtraID = $(this).data("product")
-const selectedExtraName = $(this).find("app-product > div.product-name > p").text().trim()
+const selectedExtraName = $(this).find("app-product > div.product-name> p").text().trim()
 
 //adding extra category to the item on the list
 let currentCat = $("#pos-wrapper > div.pos-content > div > table > tbody > tr.table-top > td > div > app-breadcrumb > ol > li:nth-child(2) > a").text()
 const lastItem = $("#pos-wrapper > div.pos-content > app-invoice > div > div.products-sheet > div > div > div > app-invoice-items > ul > li.order-item:last-child")
 !lastItem.attr( "data-cat") && lastItem.attr( "data-cat", currentCat)
 
-currentExtras = currentItem.data("extraids") || []
-currentExtrasNames = currentItem.data("extranames") || [] 
-extraNames = currentItem.data("extranames") || {}
-
+//currentExtras = currentItem.data("extraids") || []
+//currentExtrasNames = currentItem.data("extranames") || [] 
+extraNames =currentItem.data("extranames") || {}
+console.log("just added", extraNames)
 // Add Extra IDs
-currentExtras.push(selectedExtraID)
-const extrasSet = [...new Set(currentExtras)]
-currentItem.attr("data-extraids", JSON.stringify(extrasSet))
+//currentExtras.push(selectedExtraID)
+//const extrasSet = [...new Set(currentExtras)]
+//currentItem.attr("data-extraids", JSON.stringify(extrasSet))
 
 // Add Extra Names
 //currentExtrasNames.push(selectedExtraName)
-extraNames[selectedExtraName] =  +extraNames[selectedExtraName] + 1 || 0
+extraNames[selectedExtraName] =  {name: selectedExtraName, id: selectedExtraID, qty: "" || 1, price: selectedExtraPrice}
 //const extrasSetNames = [...new Set(currentExtrasNames)]
 currentItem.attr("data-extranames", JSON.stringify(extraNames))
 //currentItem.closest(".extra-div").html(JSON.stringify(Object.keys(extraNames)))
@@ -134,14 +164,17 @@ currentItem.find("ul > li:not(.meta-info)").remove()
 
 //currentItem.find(".meta-list > li.meta-info").after(`<li><b>${JSON.stringify(Object.keys(extraNames))}</b></li>`)
 //currentItem.find(".meta-list > li.meta-info").after(`<li><b>${JSON.stringify(Object.keys(extraNames))}<br/> +Notes: ${currentItem.attr("data-notes") || //"No Notes"}</b></li>`)
-currentItem.find("li.meta-list").after("<li></li>")
-Object.keys(extraNames).map((ex,_)=> {
-const newChip = `<div class="extra-chip">
-  <b><span class="extra-chip-content">${ex}</span></b>
-  <span class="extra-chip-close-btn" onclick="this.parentElement.style.display='none'"></span>
+currentItem.find(".meta-list").append("<li></li>")
+
+Object.values(extraNames).map((ex,_)=> {
+const {name, id, price, qty} = ex
+const newChip = `<div class="extra-chip" data-id=${id} data-qty=${qty} data-price=${price}>
+  <b><span class="extra-chip-content">${name}</span></b>
+  <span class="extra-chip-close-btn">&times;</span>
 </div>`
 
 currentItem.find(".meta-list > li:last-child").append(newChip)
+$(".extra-chip-close-btn").click(function(e){removeExtra(ex);e.target.closest(".extra-chip").remove()})
 })
     console.log(extraNames)
 
@@ -155,6 +188,24 @@ currentItem.find(".meta-list > li:last-child").append(newChip)
 
 
 }
+
+function removeExtra(extra){
+console.log(extra)
+
+//currentExtras  = JSON.parse(currentItem.attr("data-extraids"))
+extraNames = JSON.parse(currentItem.attr("data-extranames"))
+//const itemNotes = currentItem.attr("data-notes")
+
+console.log(extraNames)
+delete extraNames[extra.name]
+
+console.log("after", extraNames)
+
+currentItem.attr("data-extranames", JSON.stringify(extraNames))
+$(this).parent().remove()
+
+}
+
 
 function FetchExtras(extrasURL, apiKey){
 $("body").append(extrasContainer)
