@@ -382,28 +382,77 @@ function addNewExtra($this){
   currentItem.attr("data-extras", JSON.stringify(newExtras))
   
 
-    // Extras Calcs
-    const uniqueExtras = [...new Set(newExtras.map(extra => extra.name))];
-    const allExtras = {}
-    uniqueExtras.map((ex,_)=> {
-      allExtras[ex] = newExtras.filter((extra,_)=> extra.name == ex).length
-    })
-  currentItem.attr("data-allextras", JSON.stringify(allExtras))
-  // DOM manipulation 
-  // Add Extra Chip to Current Item
-  currentItem.find("ul > li:not(.meta-info)").remove() 
-  currentItem.find(".meta-list").append("<li></li>")
-  Object.entries(allExtras).map((ex)=>{
-    const newChip = `<div class="extra-chip" data-name="${ex[0]} data-qty="${ex[1]}">
-      <b><span class="extra-chip-content">${ex[0]}</span></b>
-      <b><span class="extra-chip-qty">${ex[1]}</span></b>
-      <span class="extra-chip-close-btn">&times;</span>
-    </div>`
-    
-    currentItem.find(".meta-list > li:last-child").append(newChip)
+  extrasQtyCalc(newExtras)
+   
   })
 
+}
+
+
+function extrasQtyCalc(newExtras){
+
+
+  // Extras Calcs
+  const uniqueExtras = [...new Set(newExtras.map(extra => extra.name))];
+  const allExtras = {}
+  uniqueExtras.map((ex,_)=> {
+    allExtras[ex] = newExtras.filter((extra,_)=> extra.name == ex).length
+  })
+currentItem.attr("data-allextras", JSON.stringify(allExtras))
+// DOM manipulation 
+// Add Extra Chip to Current Item
+currentItem.find("ul > li:not(.meta-info)").remove() 
+currentItem.find(".meta-list").append("<li></li>")
+Object.entries(allExtras).map((ex)=>{
+  const newChip = `<div class="extra-chip" data-name="${ex[0]}" data-qty="${ex[1]}">
+    <b><span class="extra-chip-content">${ex[0]}</span></b>
+    <b><span class="extra-chip-qty">${ex[1]}</span></b>
+    <span class="extra-chip-close-btn">&times;</span>
+  </div>`
+  
+  currentItem.find(".meta-list > li:last-child").append(newChip)
+  extraRemove()
+  extraDecrease()
 })
+
+}
+
+
+function extraDecrease(){
+
+  $(".extra-chip").click(function(e){
+    e.stopPropagation()
+    const extraChip = $(e.target)
+    const $thisChipName = extraChip.attr("data-name")
+
+    // const thisExtraQty = extraChip.attr("data-qty")
+    // const newExtraQty = thisExtraQty-1
+    // extraChip.closest(".extra-chip").attr("data-qty", newExtraQty)
+
+    const currentExtras = currentItem.attr("data-extras") && JSON.parse(currentItem.attr("data-extras"))
+    const a = currentExtras.filter((ex,_)=>ex.name != $thisChipName)
+    const b = currentExtras.filter((ex,_)=>ex.name == $thisChipName).slice(0,-1)
+    const filteredExtras = [...a, ...b]
+    console.log(a, b, filteredExtras)
+    currentItem.attr("data-extras", JSON.stringify(filteredExtras))
+    extrasQtyCalc(filteredExtras)
+  })
+
+
+}
+
+function extraRemove(){
+
+  $(".extra-chip-close-btn").click(function(e){
+    const closeBtn = $(e.target)
+    const $thisChipName = closeBtn.closest(".extra-chip").attr("data-name")
+    closeBtn.closest(".extra-chip").remove()
+    const currentExtras = currentItem.attr("data-extras") && JSON.parse(currentItem.attr("data-extras"))
+    const filteredExtras = currentExtras.filter((ex,_)=>ex.name != $thisChipName)
+    currentItem.attr("data-extras", JSON.stringify(filteredExtras))
+    extrasQtyCalc(filteredExtras)
+  })
+
 }
 
 function removeExtra(){
