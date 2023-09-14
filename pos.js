@@ -18,36 +18,49 @@ let orderNumber, lastItem, invID;
 const extraBtn = `<span class="extra-btn" style="float: left;padding: 4px;margin: -10px;background: darkkhaki;color: wheat;border: solid 1px;border-radius: 4px;"><i class="fa fa-plus"></i></span>` 
 
 function prepPOS(){
+  accessCustomField()
+  // Add input field for testing
+  // $(".orders-tabs-wrapper ul").append(
+  //   '<li class="px-4"><input _ngcontent-c0="" autocomplete="off" class="form-control ng-untouched ng-pristine ng-valid" id="inv-obj" type="text" placeholder="invoice data..."></li>'
+  // );
+
+// Reset the leftovers from previous sessions
+  $("#pos-wrapper > div.pos-content > app-invoice > div > div.products-sheet > div > div > div > div > a.user-action.del-order.btn.btn-danger > i").trigger("click")
+  const keyEvent = new Event( "keyup", { keyCode: 13 } );
+  $('window').trigger(keyEvent);
 // Disable Discount Field
 $("#pos-wrapper > div.pos-content > app-invoice > div > div.calc-wrapper > div > div.subwindow-container-fix.pads > section.content-numpad > button:nth-child(2), #pos-wrapper > div.pos-content > app-invoice > div > div.calc-wrapper > div > div.subwindow-container-fix.pads > section.content-numpad > button:nth-child(3)").attr("disabled", "disabled").css({userSelect: "none", pointerEvents: "none", color: "gray"})
 
 
-  // Accessing Invoice Custom Fields
- $("#invoice-details-iframe").attr(
-      "src",
-      "/owner/invoices/validate_pos_invoice_details/1?new=1"
-    );
 
-    setTimeout(()=>{
-      $("#pos-wrapper > div.pos-content > app-invoice > div > div.products-sheet > div > div > div > div > a.user-action.del-order.btn.btn-danger > i").trigger("click")
-      const keyEvent = new Event( "keyup", { keyCode: 13 } );
-      $('window').trigger(keyEvent);
-      },2000)
+
+
 
       // Adding styles for Extra Btn And Others
 const customStyles = `
-.extra-chip {
+.notes-chip {
     display: inline-block;
     padding: 0 8px;
     height: 23px;
     font-size: 10px;
     line-height: 23px;
     border-radius: 40px;
-    background-color: #2551da;
+    background-color: #5bb733;
     color: #fff;
     cursor: pointer;
 }
 
+.extra-chip {
+  display: inline-block;
+  padding: 0 8px;
+  height: 23px;
+  font-size: 10px;
+  line-height: 23px;
+  border-radius: 40px;
+  background-color: #2551da;
+  color: #fff;
+  cursor: pointer;
+}
 
 .extra-chip-close-btn {
     padding-left: 5px;
@@ -67,16 +80,33 @@ li[data-cat='extra']{
   .toggle-input{
     display:block !important
   }
+  .notes-form input{
+    width: 500px;
+    background: azure;
+    padding: 32px 10px;
+  }
+  .form-group {
+    margin:0
+  }
 `
 $(`<style>${customStyles}</style>`).appendTo( "head" )
 
 }
 
+// Accessing Invoice Custom Fields
+function accessCustomField(){
+ $("#invoice-details-iframe").attr(
+      "src",
+      "/owner/invoices/validate_pos_invoice_details/1?new=1"
+    );
+    }
+
+
 // Create Notes Field
 function CreateNotesField(){
-  const notesContainer = `<div class="notes-container" style="display:none;z-index:10;position:absolute;top:50%;left:50%;transform:translateX(-50%) translateY(-50%);border:4px solid #d5d5d5;box-shadow:2px 2px 20px 3px #7777773d;border-radius:6px;background:#fff;height:200px;width:300px">  <div style="width:100%;padding:0px;position:relative;z-index:20;"><span style="transform:rotate(45deg);position:absolute;top:0;right:0;padding:3px 10px;font-size:22px;cursor:pointer;" class="extras-close">+</span></div><form class="notes-form">
+  const notesContainer = `<div class="notes-container" style="display:none;z-index:10;position:absolute;top:50%;left:50%;transform:translateX(-50%) translateY(-50%);border:11px solid #485563;box-shadow:2px 2px 20px 3px #7777773d;border-radius:6px;background:#fff;">  <div style="width:100%;padding:0px;position:relative;z-index:20;"><span style="transform:rotate(45deg);position:absolute;top:0;right:0;padding:3px 10px;font-size:22px;cursor:pointer;" class="extras-close" onclick="document.querySelector('.notes-container').classList.remove('toggle-input')">+</span></div><form class="notes-form">
   <div class="form-group">
-  <label for="exampleFormControlInput1">Item Notes:</label>
+  
   <input type="text" class="form-control" id="exampleFormControlInput1" placeholder="Add Notes..."/>
   </div>
   </form>
@@ -88,23 +118,32 @@ function CreateNotesField(){
  // Handling Notes Input (onClick extraBtn)
  function notesHandling(){
  $(".notes-form").submit(function(e){
-  e.preventDefault()
+   e.preventDefault()
+  $('.notes-container').removeClass('toggle-input')
   const inputNotesVal = $(this).find("input").val()
-  //console.log(inputNotesVal)
   currentItem.attr("data-notes", inputNotesVal)
+
+  // $(this).find("input").val("")
   //extraNames[inputNotesVal] = "notes"
   currentItem.find("ul > li:not(.meta-info)").remove() 
-  currentItem.find(".meta-list > li.meta-info").after("li")
-  
-  
-  currentItem.find(".meta-list > li.meta-info").after(`<li>${JSON.stringify(Object.keys(extraNames))}<br/> +Notes: ${currentItem.attr("data-notes")}</li>`)
+  //currentItem.find(".meta-list > li.meta-info").after("li")
+  console.log("from notes", currentItem.attr("data-notes"))
+  const allExtra = currentItem.attr("data-extras") ? JSON.parse(currentItem.attr("data-extras")) : []
+  extrasQtyCalc(allExtra)
+  const newNoteChip = `<div class="notes-chip">
+  <b><span class="extra-chip-content">${currentItem.attr("data-notes")}</span></b>
+  <span class="extra-chip-close-btn">&times;</span>
+</div>`
+
+currentItem.find(".meta-list > li:last-child").append(newNoteChip)
+  // currentItem.find(".meta-list > li.meta-info").after(`<li>${JSON.stringify(Object.keys(extraNames))}<br/> +Notes: ${currentItem.attr("data-notes")}</li>`)
   //$(this).find("input").val("")
-  $(".notes-container").removeClass("toggle-input")
+  // document.querySelector('.notes-container').classList.remove('toggle-input')
   })
 }
 
 // Get Current Item (onClick extraBtn)
-function AccessCurrentItem(el){
+function accessCurrentItem(el){
   const $thisItem = $(el).closest("li")
   // current item prep for using
   currentExtras = $thisItem.data("extras") || []
@@ -123,6 +162,7 @@ function addCategoryName(){
   !lastItem.attr( "data-cat") && lastItem.attr( "data-cat", currentCat)
   lastItem.find(".fa-plus").length != 1 && lastItem.append(extraBtn)
   });
+  accessCustomField()
 
 }
 
@@ -174,12 +214,14 @@ function GETorderNumber(orderNumberURL, apiKey){
 
   // Create Invoice Data Obj
 function invoiceObj(){
+  invObj = []
+  accessCustomField()
   GETorderNumber(orderNumberURL, apiKey)
   const allItems = $("#pos-wrapper > div.pos-content > app-invoice > div > div.products-sheet > div > div > div > app-invoice-items > ul > li:not([data-cat='extra'])")
   allItems.map((_,item)=>{
   //console.log(item)
   const currentItemNotes = $(item).attr("data-notes")
-  const currentItemExtras = JSON.parse($(item).attr("data-extras"))
+  const currentItemExtras = $(item).attr("data-extras") ? JSON.parse($(item).attr("data-extras")) : "No Extras"
   
   
   const thisItem = {item_name: $(item).find(".product-name").text(), item_qty: $(item).find("li > span > em:nth-child(1)").text(), item_category: $(item).attr( "data-cat"), itemPrice: $(item).find(".price").text().replace(",", "").match(/[-]{0,1}[\d]*[.]{0,1}[\d]+/g)[0], status: "0", order_no: orderNumber, invoice_id: invID, currentItemExtras, currentItemNotes}
@@ -203,8 +245,8 @@ function invoiceObj(){
           .contents()
           .find("#InvoiceForm > div.submit-wrap > button")
           .click()
-  console.log(invObj, customFelid.val())
-  $("#inv-obj").val(JSON.stringify(invObj))
+  console.log("This is from invObj...", invObj, customFelid.val())
+  // $("#inv-obj").val(JSON.stringify(invObj))
   
   }
 
@@ -228,7 +270,6 @@ function onCheckout(payBtn){
     e.preventDefault()
     const itemsList = $(".order-item")
     // Passing Inv. Data to Custom Field
-    $(".pay.btn-success").click(invoiceObj())
     const invNumberInterval = setInterval(() => {
     if(!invID){
     console.log("inv is null")
@@ -270,7 +311,7 @@ function EventListeners(){
       // console.log("yes item Extra gooo...")
           // logic goes here....
           extraLogic()
-          currentItem = AccessCurrentItem($this)
+          currentItem = accessCurrentItem($this)
     }
     if($this.tagName == "IMG" ||$this.hasClass("product-name")){
       setTimeout(()=>{
@@ -352,6 +393,8 @@ function goToExtras(){
     $("#pos-wrapper > div.pos-content > div > table > tbody > tr.table-cont > td > app-categories > app-products > div > span.product-pic").one("click", function(e){
       const $this = $(this)
       addNewExtra($this)
+    notesHandling()
+
     })
   
   },200)
@@ -362,8 +405,7 @@ function goToExtras(){
 // All About Extras
 function extraLogic(){
   goToExtras()
-    removeExtra()
-    notesHandling()
+    // removeExtra()
 }
 
 
@@ -455,31 +497,31 @@ function extraRemove(){
 
 }
 
-function removeExtra(){
-$(".extra-chip-close-btn").click(function(e){
-  const $thisExtra = e.target
-  const $thisExtraQty = $thisExtra.data("qty")
-  const $thisExtraName = $thisExtra.data("name")
-  if($thisExtraQty > 0)$thisExtra.closest(".extra-chip").remove()
-  if($thisExtraQty > 0){
-    const newQty = +$thisExtraQty--
-    $thisExtra.closest(".extra-chip-qty").text(newQty)
-    $thisExtra.attr("data-qty", $thisExtraQty--)
+// function removeExtra(){
+// $(".extra-chip-close-btn").click(function(e){
+//   const $thisExtra = e.target
+//   const $thisExtraQty = $thisExtra.data("qty")
+//   const $thisExtraName = $thisExtra.data("name")
+//   if($thisExtraQty > 0)$thisExtra.closest(".extra-chip").remove()
+//   if($thisExtraQty > 0){
+//     const newQty = +$thisExtraQty--
+//     $thisExtra.closest(".extra-chip-qty").text(newQty)
+//     $thisExtra.attr("data-qty", $thisExtraQty--)
 
-    // Update the allextra data attr on the Current Item
-    const oldExtras = JSON.parse(currentItem.data("extras"))
-    const $thisSimilars = oldExtras.filter((x,_)=>x["name"] == $thisExtraName)
-    currentItem.attr("data-extras", JSON.stringify([...oldExtras.filter((x,_)=>x["name"] != $thisExtraName), ...$thisSimilars.pop()]))
+//     // Update the allextra data attr on the Current Item
+//     const oldExtras = JSON.parse(currentItem.data("extras"))
+//     const $thisSimilars = oldExtras.filter((x,_)=>x["name"] == $thisExtraName)
+//     currentItem.attr("data-extras", JSON.stringify([...oldExtras.filter((x,_)=>x["name"] != $thisExtraName), ...$thisSimilars.pop()]))
 
-    // Update the allextra data attr on the Current Item
-    const oldAllExtras = JSON.parse(currentItem.data("allextras"))
-    currentItem.attr("data-allextras", JSON.stringify({...oldAllExtras, $thisExtraName: newQty}))
+//     // Update the allextra data attr on the Current Item
+//     const oldAllExtras = JSON.parse(currentItem.data("allextras"))
+//     currentItem.attr("data-allextras", JSON.stringify({...oldAllExtras, $thisExtraName: newQty}))
 
-  }
+//   }
 
-}) 
+// }) 
 
-}
+// }
 
 
 // onLoad DOM
@@ -487,6 +529,7 @@ let domInterval = setInterval(()=>{
   payBtn = $("#paymentSubmitBtn")
   
   if(payBtn){
+    $(".pay.btn-success").click(()=>invoiceObj())
     clearInterval(domInterval)
     // If user resets POS or goes HOME
     onHomeOrReset()
